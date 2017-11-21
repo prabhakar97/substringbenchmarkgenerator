@@ -11,9 +11,12 @@ import java.util.stream.IntStream;
 @Builder
 public class EmailGenerator implements Callable<List<String>> {
     private static final Faker faker = new Faker();
-    private int numEmails = 10000;
+    private int numEmails;
     @Override
     public List<String> call() throws Exception {
+        if (numEmails == 0) {
+            numEmails = 10000;
+        }
         return IntStream.range(0, numEmails).mapToObj((i) -> faker.internet().emailAddress()).collect(Collectors.toList());
     }
 }

@@ -1,3 +1,4 @@
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ public class Main {
         final List<Future<List<String>>> futures = new ArrayList<>();
         IntStream.range(0, 10000).forEach(x -> futures.add(executorService.submit(emailGenerator)));
         IntStream.range(0, 10000).forEach(i -> {
-            try (final FileWriter fileWriter = new FileWriter("/tmp/database.txt", true)) {
+            try (final FileWriter fileWriter = new FileWriter(new File(System.getProperty("java.io.tmpdir"), "database.txt"), true)) {
                 final List<String> result = futures.get(i).get();
                 final StringJoiner sj = new StringJoiner("\n");
                 result.forEach(email -> sj.add(email));
@@ -29,5 +30,7 @@ public class Main {
             }
 
         });
+
+        System.out.println(System.getProperty("java.io.tmpdir"));
     }
 }
