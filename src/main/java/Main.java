@@ -1,36 +1,29 @@
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.StringJoiner;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.CompletionService;
+import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.IntStream;
 
 public class Main {
+    private static final int NUM_THREADS = Runtime.getRuntime().availableProcessors() * 2;
     public static void main(String... args) {
-        final Callable<List<String>> emailGenerator = EmailGenerator.builder().numEmails(10000).build();
-        final ExecutorService executorService = Executors.newFixedThreadPool(8);
-        final List<Future<List<String>>> futures = new ArrayList<>();
-        IntStream.range(0, 10000).forEach(x -> futures.add(executorService.submit(emailGenerator)));
-        IntStream.range(0, 10000).forEach(i -> {
-            try (final FileWriter fileWriter = new FileWriter(new File(System.getProperty("java.io.tmpdir"), "database.txt"), true)) {
-                final List<String> result = futures.get(i).get();
-                final StringJoiner sj = new StringJoiner("\n");
-                result.forEach(email -> sj.add(email));
-                fileWriter.write(sj.toString());
-                System.out.println("Wrote " + i * 10000 + " emails");
-            } catch (InterruptedException | ExecutionException | IOException e) {
-                System.err.println("Something is dead.");
-                System.err.println(e.getMessage());
+        final CompletionService<Long> completionService = new ExecutorCompletionService<>(Executors.newFixedThreadPool(NUM_THREADS));
+        System.out.println("Running tasks on " + NUM_THREADS + " threads");
+
+        // Split the 100 mil email generation into thousand tasks each generating hundred thousand
+        final List<Future<Long>> futures = new ArrayList<>();
+        IntStream.range(0, 1000).forEach(taskId -> futures.add(completionService.submit(
+                EmailGenerator.builder().numEmails(100000).taskId(taskId).numThreads(NUM_THREADS).build()
+        )));
+        IntStream.range(0, 1000).forEach(i -> {
+            try {
+                // Block till next thread is back with result
+                completionService.take();
+            } catch (InterruptedException e) {
+                System.err.println("Problem occured in multithreading. Error: " + e.getMessage());
             }
-
         });
-
-        System.out.println(System.getProperty("java.io.tmpdir"));
     }
 }
