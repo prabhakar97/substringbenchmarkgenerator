@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/prabhakar97/substringbenchmarkgenerator.svg?branch=master)](https://travis-ci.org/prabhakar97/substringbenchmarkgenerator)
+
 # substringbenchmarkgenerator
 Repository for generating a database of 100 million email addresses
 
